@@ -7,7 +7,7 @@ from pygooglechart import XYLineChart
     This program evolves (sub-optimal of course) solutions to the classic Traveling 
     Salesman Problem. '''
 
-MAP_SIZE = 250
+MAP_SIZE = 300
 MUTATION_RATE = 10
 
 class city:
@@ -124,7 +124,7 @@ class population:
     def __init__(self, size, fill):
         self.pop = []
         if fill:        
-            m = rand_map(10)
+            m = rand_map(16)
             p = []
             i = 0
             while (i < size):
@@ -216,14 +216,10 @@ def crossover(parent1, parent2):
     # grab the random path from the tour we chose
     rand_path = chosen[start_i:end_i]
     for c in rand_path:
-        c.print_city()
         child.add_stop(c)
-
-    print '------'
 
     for s in other:
         if city_not_in_list(s, child.get_order()):
-            s.print_city()
             child.add_stop(s)
     return child
 
@@ -240,7 +236,7 @@ def mutate(pop):
 
 
 def evolve(pop):
-    new_pop_size = (pop.get_size() // random.randint(1,2))
+    new_pop_size = (pop.get_size() // random.randint(1,4))
 
     new_pop = population(new_pop_size, False)
 
@@ -254,49 +250,24 @@ def evolve(pop):
     return new_pop
 
 def evolution(pop_size, iterations):
-    p = population(pop_size, True)
-    for x in range(iterations):
-        evolve(p, pop_size)
+    i=0
+    print 'generation %d' % (i)
+    i+=1
 
+    # gen 0
+    p = population(pop_size, True)
     f = p.fittest()
     f.graph()
 
+    for x in range(iterations):
+        print 'generation %d' % (i)
+        p = evolve(p)
+        f = p.fittest()
+        f.graph()
+        i+=1
 
-p = population(40, True)
-f = p.fittest()
-
-p1 = evolve(p)
-f1 = p1.fittest()
-
-p2 = evolve(p1)
-f2 = p2.fittest()
-
-p3 = evolve(p2)
-f3 = p3.fittest()
-
-p4 = evolve(p3)
-f4 = p4.fittest()
-
-p5 = evolve(p4)
-f5 = p5.fittest()
-
-print 'final pop size:' + str(p5.get_size())
+    print 'final pop size:' + str(p.get_size())
 
 
-f.graph()
-f1.graph()
-f2.graph()
-f3.graph()
-f4.graph()
-f5.graph()
+evolution(50, 12)
 
-# m = rand_map(10)
-# t = m.create_tour()
-# j = m.create_tour()
-# t.graph()
-# j.graph()
-# child = crossover(t,j)
-
-# child.graph()
-# # print '=========='
-# # child.print_cities()
