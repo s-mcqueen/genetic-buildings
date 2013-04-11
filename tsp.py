@@ -108,9 +108,14 @@ class population:
                 i+=1
             self.pop = p
 
+    def add_tour(self, tour):
+        self.pop.append(tour)
 
     def get_pop(self):
         return self.pop
+
+    def get_size(self):
+        return self.pop_size
 
     def fittest(self):
         best = float('inf')
@@ -134,18 +139,20 @@ def rand_map(num_cities, map_size):
 
 
 
-def tournament(pop):
-    # select 20 random out of pop for a tournament
-    # return the fittest one
-    return 0
+def tournament(pop, size):
+
+    tournament = population(size, False)
+    for s in range(size):
+        tour = random.choice(pop)
+        tournament.add_tour(tour)
+
+    f = tournament.fittest()
+
+    return f
 
 
 def crossover(parent1, parent2):
 
-    # run a tournament for parent 1
-    # run a tournament for parent 2
-
-    # crossover --
     # randomly select a path section in parent1
         # put path in child
     # take the other path section from parent2
@@ -156,15 +163,21 @@ def crossover(parent1, parent2):
 def evolve(pop, pop_size):
     new_pop = population(pop_size, False)
 
-    # for each tour in new_pop
-        # run tournaments for parent1, parent2
-        # child = crossover(parent1, parent2)
+    pop_size = pop.get_size()
+    new_pop_size = new_pop.get_size()
 
-    # mutate population
-    # return new population
+    for n in range(new_pop_size):
+        parent1 = tournament(pop_size, 20)
+        parent2 = tournament(pop_size, 20)
+        child = crossover(parent1, parent2)
+
+    mutate(new_pop)
+    return new_pop
 
 def mutate(pop):
-    # for tours in pop:
+    pop_size = pop.get_size()
+
+    # for tours in range(pop_size):
         # if random num < mutation rate:
             # select two random cities and swap them
 
@@ -180,5 +193,6 @@ def evolution(pop_size, iterations):
 
     f = p.fittest()
     f.graph()
+
 
 
