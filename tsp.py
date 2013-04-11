@@ -1,7 +1,4 @@
-import math
-import random
-import webbrowser
-import copy
+import math, random, webbrowser, copy
 
 from pygooglechart import ScatterChart
 from pygooglechart import XYLineChart
@@ -99,14 +96,18 @@ class tour:
 
 class population:
 
-    def __init__(self, size):
-        m = rand_map(10, 250)
-        p = []
-        i = 0
-        while (i < size):
-            p.append(m.create_tour())
-            i+=1
-        self.pop = p
+    def __init__(self, size, fill):
+        self.pop_size = size
+        self.pop = []
+        if fill:        
+            m = rand_map(10, 250)
+            p = []
+            i = 0
+            while (i < size):
+                p.append(m.create_tour())
+                i+=1
+            self.pop = p
+
 
     def get_pop(self):
         return self.pop
@@ -133,10 +134,51 @@ def rand_map(num_cities, map_size):
 
 
 
-p = population(100)
-f = p.fittest()
-f.graph()
+def tournament(pop):
+    # select 20 random out of pop for a tournament
+    # return the fittest one
+    return 0
 
 
+def crossover(parent1, parent2):
+
+    # run a tournament for parent 1
+    # run a tournament for parent 2
+
+    # crossover --
+    # randomly select a path section in parent1
+        # put path in child
+    # take the other path section from parent2
+
+    # return child
+    return 0
+
+def evolve(pop, pop_size):
+    new_pop = population(pop_size, False)
+
+    # for each tour in new_pop
+        # run tournaments for parent1, parent2
+        # child = crossover(parent1, parent2)
+
+    # mutate population
+    # return new population
+
+def mutate(pop):
+    # for tours in pop:
+        # if random num < mutation rate:
+            # select two random cities and swap them
+
+    # return population
+    return 0
+
+
+
+def evolution(pop_size, iterations):
+    p = population(pop_size, True)
+    for x in range(iterations):
+        evolve(p, pop_size)
+
+    f = p.fittest()
+    f.graph()
 
 
