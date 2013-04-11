@@ -122,7 +122,6 @@ class tour:
 class population:
 
     def __init__(self, size, fill):
-        self.pop_size = size
         self.pop = []
         if fill:        
             m = rand_map(10)
@@ -132,15 +131,17 @@ class population:
                 p.append(m.create_tour())
                 i+=1
             self.pop = p
-
+        self.size = len(self.pop)
+        
     def add_tour(self, tour):
         self.pop.append(tour)
+        self.size = len(self.pop)
 
     def get_pop(self):
         return self.pop
 
     def get_size(self):
-        return self.pop_size
+        return self.size
 
     def fittest(self):
         best = float('inf')
@@ -167,8 +168,11 @@ def rand_map(num_cities):
 def tournament(pop, size):
 
     tournament = population(size, False)
+
+    tour_list = pop.get_pop()
+
     for s in range(size):
-        tour = random.choice(pop)
+        tour = random.choice(tour_list)
         tournament.add_tour(tour)
 
     f = tournament.fittest()
@@ -176,50 +180,51 @@ def tournament(pop, size):
     return f
 
 
-# sections is wrong -- it needs to check if cities are in the tour, so 
-# it doesn't add cities twice. It also needs to make sure that all cities make it
-# the tour
-def sections(parent1, parent2):
-    order1 = copy.deepcopy(parent1.get_order())
-    order2 = copy.deepcopy(parent2.get_order())
+def same_city(c1, c2):
+    return (c1.getx() == c2.getx()) and (c1.gety() == c2.gety())
 
+def city_not_in_list(c, lst):
+    for l in lst:
+        if same_city(c, l):
+            return False
+    return True
+
+
+def crossover(parent1, parent2):
+    
+    child = tour([]) # send an empty tour
+    p1 = copy.deepcopy(parent1)
+    p2 = copy.deepcopy(parent2)
+
+    # choose one of these tours to select a path from
+    if (random.randint(1,2) == 1):
+        chosen = p1.get_order()
+        other = p2.get_order()
+    else:
+        chosen = p2.get_order()
+        other = p1.get_order()
+
+    # randomly choose a start and end index such that start < end
     start_i = 1
     end_i = 0
     while (start_i >= end_i):
-        c1 = random.choice(order1)
-        c2 = random.choice(order1)
-        start_i = order1.index(c1)
-        end_i = order1.index(c2)
+        c1 = random.choice(chosen)
+        c2 = random.choice(chosen)
+        start_i = chosen.index(c1)
+        end_i = chosen.index(c2)
 
-    # sections are part
-    parent1_section = order1[start_i:end_i]
-    parent2_section = order2[end_i:] + order2[:start_i]
-
-    parent1.print_cities()
-    print '----'
-
-    for c in parent1_section:
+    # grab the random path from the tour we chose
+    rand_path = chosen[start_i:end_i]
+    for c in rand_path:
         c.print_city()
+        child.add_stop(c)
 
-    print '------------'
-    parent2.print_cities()
-    print '----'
+    print '------'
 
-    for c in parent2_section:
-        c.print_city()
-
-    return (parent1_section, parent2_section)
-
-# parents are tours
-def crossover(parent1, parent2):
-
-    t1 = copy.deepcopy(parent1)
-    t2 = copy.deepcopy(parent2)
-
-    s1, s2 = sections(t1, t2)
-    child_order = s1 + s2
-
-    child = tour(child_order)
+    for s in other:
+        if city_not_in_list(s, child.get_order()):
+            s.print_city()
+            child.add_stop(s)
     return child
 
 
@@ -234,19 +239,18 @@ def mutate(pop):
     return 0
 
 
-def evolve(pop, pop_size):
-    new_pop = population(pop_size, False)
+def evolve(pop):
+    new_pop_size = (pop.get_size() // random.randint(1,2))
 
-    pop_size = pop.get_size()
-    new_pop_size = new_pop.get_size()
+    new_pop = population(new_pop_size, False)
 
     for n in range(new_pop_size):
-        parent1 = tournament(pop_size, 20)
-        parent2 = tournament(pop_size, 20)
-        child = crossover(parent1, parent2)
-        # add child to new population (add_tour)
+        parent1 = tournament(pop, 20)
+        parent2 = tournament(pop, 20)
+        for s in range(random.randint(1, 5)):
+            tour = crossover(parent1, parent2)
+            new_pop.add_tour(tour)
 
-    mutate(new_pop)
     return new_pop
 
 def evolution(pop_size, iterations):
@@ -258,15 +262,41 @@ def evolution(pop_size, iterations):
     f.graph()
 
 
+p = population(40, True)
+f = p.fittest()
 
-# m = rand_map(5)
+p1 = evolve(p)
+f1 = p1.fittest()
+
+p2 = evolve(p1)
+f2 = p2.fittest()
+
+p3 = evolve(p2)
+f3 = p3.fittest()
+
+p4 = evolve(p3)
+f4 = p4.fittest()
+
+p5 = evolve(p4)
+f5 = p5.fittest()
+
+print 'final pop size:' + str(p5.get_size())
+
+
+f.graph()
+f1.graph()
+f2.graph()
+f3.graph()
+f4.graph()
+f5.graph()
+
+# m = rand_map(10)
 # t = m.create_tour()
 # j = m.create_tour()
 # t.graph()
 # j.graph()
-
 # child = crossover(t,j)
 
 # child.graph()
-# print '=========='
-# child.print_cities()
+# # print '=========='
+# # child.print_cities()
