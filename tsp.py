@@ -2,13 +2,13 @@ import math, random, webbrowser, copy
 
 from pygooglechart import ScatterChart
 from pygooglechart import XYLineChart
+from pygooglechart import Axis
+
 
 ''' Initial research: practicing writing genetic algorithms
     This program evolves (sub-optimal of course) solutions to the classic Traveling 
     Salesman Problem. '''
 
-MAP_SIZE = 300
-MUTATION_RATE = 10
 
 class city:
     def __init__(self):
@@ -35,7 +35,6 @@ class amap:
 
     def __init__(self):
         self.cities = []
-
 
     def add_city(self):
         self.cities.append(city())
@@ -75,7 +74,7 @@ class tour:
             PLUS the first element in the tour -- we have to go back to the start '''
         self.tour_order = tour_order
 
-    def get_order(self):
+    def get_city_order(self):
         return self.tour_order
 
     def get_length(self):
@@ -91,7 +90,7 @@ class tour:
             i+=1
 
     def fitness(self):
-        ''' returns fitness of this tour'''
+        ''' returns fitness of this tour -- want to MINIMIZE this '''
 
         to = copy.deepcopy(self.tour_order)
         
@@ -121,64 +120,55 @@ class tour:
 
 class population:
 
-    def __init__(self, size, fill):
-        self.pop = []
-        if fill:        
-            m = rand_map(16)
+    def __init__(self, size, fill, tsp_map):
+        self.tours = []
+        self.tsp_map = copy.deepcopy(tsp_map)
+        if fill:     
             p = []
             i = 0
             while (i < size):
-                p.append(m.create_tour())
+                p.append(self.tsp_map.create_tour())
                 i+=1
-            self.pop = p
-        self.size = len(self.pop)
+            self.tours = p
+        self.size = len(self.tours)
         
     def add_tour(self, tour):
-        self.pop.append(tour)
-        self.size = len(self.pop)
+        self.tours.append(tour)
+        self.size = len(self.tours)
 
-    def get_pop(self):
-        return self.pop
+    def get_tours(self):
+        return self.tours
 
     def get_size(self):
         return self.size
 
+    def get_map(self):
+        return self.tsp_map
+
     def fittest(self):
         best = float('inf')
         best_so_far = 0
-        for p in self.pop:
+        for p in self.tours:
             fit = p.fitness()
             if (best > fit):
                 best = fit
                 best_so_far = p
-        return best_so_far
+        return (best_so_far, best)
 
 
-def rand_map(num_cities):
-    ''' generates a random map with a number of cities and a size in px '''
-    m = amap()
-    i = 0
-    while (i <= num_cities):
-        m.add_city()
-        i+=1
-    return m
+def run_tournament(pop, size):
 
+    tsp_map = pop.get_map()
+    tour_list = pop.get_tours()
 
-
-def tournament(pop, size):
-
-    tournament = population(size, False)
-
-    tour_list = pop.get_pop()
+    tournament = population(size, False, tsp_map)
 
     for s in range(size):
         tour = random.choice(tour_list)
         tournament.add_tour(tour)
 
-    f = tournament.fittest()
-
-    return f
-
+    fit, fitness =  tournament.fittest()
+    return fit
 
 def same_city(c1, c2):
     return (c1.getx() == c2.getx()) and (c1.gety() == c2.gety())
@@ -189,7 +179,6 @@ def city_not_in_list(c, lst):
             return False
     return True
 
-
 def crossover(parent1, parent2):
     
     child = tour([]) # send an empty tour
@@ -198,11 +187,11 @@ def crossover(parent1, parent2):
 
     # choose one of these tours to select a path from
     if (random.randint(1,2) == 1):
-        chosen = p1.get_order()
-        other = p2.get_order()
+        chosen = p1.get_city_order()
+        other = p2.get_city_order()
     else:
-        chosen = p2.get_order()
-        other = p1.get_order()
+        chosen = p2.get_city_order()
+        other = p1.get_city_order()
 
     # randomly choose a start and end index such that start < end
     start_i = 1
@@ -219,55 +208,124 @@ def crossover(parent1, parent2):
         child.add_stop(c)
 
     for s in other:
-        if city_not_in_list(s, child.get_order()):
+        if city_not_in_list(s, child.get_city_order()):
             child.add_stop(s)
     return child
 
 
-def mutate(pop):
+def mutate(pop, mutation_rate):
     pop_size = pop.get_size()
 
-    # for tours in range(pop_size):
-        # if random num < MUTATION_RATE:
+    for tour in pop.get_tours():
+        if (random.randint(1,100) < mutation_rate):
+            cities = tour.get_city_order()
+
             # select two random cities and swap them
+            city1 = random.choice(cities)
+            city2 = random.choice(cities)
+
+            i = cities.index(city1)
+            j = cities.index(city1)
+            cities[i], cities[j] = cities[j], cities[i]
 
     # return population
-    return 0
+    return pop
 
 
-def evolve(pop):
-    new_pop_size = (pop.get_size() // random.randint(1,4))
+def evolve(pop, tsp_map, mutation_rate):
 
-    new_pop = population(new_pop_size, False)
+    # to keep population from growing too fast
+    new_pop_size = (pop.get_size() // random.randint(1,5))
+    if (new_pop_size < 10):
+        new_pop_size += 10
+    new_pop = population(new_pop_size, False, tsp_map)
+
+    tournament_size = 20
 
     for n in range(new_pop_size):
-        parent1 = tournament(pop, 20)
-        parent2 = tournament(pop, 20)
+        parent1 = run_tournament(pop, tournament_size)
+        parent2 = run_tournament(pop, tournament_size)
+
+        # parents have up to 5 children, randomly
         for s in range(random.randint(1, 5)):
             tour = crossover(parent1, parent2)
             new_pop.add_tour(tour)
 
+    mutate(pop, mutation_rate)
+
     return new_pop
 
-def evolution(pop_size, iterations):
+
+def graph_evolution(gens, best_per_gen):
+
+    chart = XYLineChart(500, 500, x_range=(0, max(gens)), y_range=(0, max(best_per_gen)))
+
+    chart.add_data(gens)
+    chart.add_data(best_per_gen)
+
+    chart.set_colours(['0000FF'])
+
+    # x axis labels are generation numbers
+    chart.set_axis_labels(Axis.BOTTOM, gens)
+
+    webbrowser.open(chart.get_url())
+
+
+def evolution(pop_size, num_gens, tsp_map, mutation_rate):
     i=0
-    print 'generation %d' % (i)
-    i+=1
+    best_per_gen = []
 
     # gen 0
-    p = population(pop_size, True)
-    f = p.fittest()
-    f.graph()
+    p = population(pop_size, True, tsp_map)
+    fit, fitness = p.fittest()
+    best_per_gen.append(fitness)
+    fit.graph()
 
-    for x in range(iterations):
-        print 'generation %d' % (i)
-        p = evolve(p)
-        f = p.fittest()
-        f.graph()
+    print 'initial population. size: %d, best fitness: %d' % (p.get_size(), fitness)
+
+    for x in range(num_gens):
         i+=1
+        p = evolve(p, tsp_map, mutation_rate)
+        fit, fitness = p.fittest()
+        best_per_gen.append(fitness)
+        fit.graph()
+        print 'gen: %d, size: %d, best fitness: %d' % (i, p.get_size(), fitness)
 
-    print 'final pop size:' + str(p.get_size())
+    graph_evolution(range(num_gens+1), best_per_gen)
+
+    print "that's all folks!"
+
+def rand_map(num_cities):
+    ''' generates a random map with a number of cities and a size in px '''
+    m = amap()
+    i = 0
+    while (i <= num_cities):
+        m.add_city()
+        i+=1
+    return m
 
 
-evolution(50, 12)
+def main():
+    global MAP_SIZE
+    global TSP_SIZE 
+    global MUTATION_RATE 
+
+    # set globals
+    MAP_SIZE = 300
+    TSP_SIZE = int(raw_input("Number of cities for a random TSP: "))
+    
+    # set evolution params
+    start_pop_size = int(raw_input("Starting population size: "))
+    mutation_rate = int(raw_input("Evolution mutation rate (1-100): "))
+    num_gens = int(raw_input("Number of generations: "))
+
+    tsp_map = rand_map(TSP_SIZE)
+    tsp_map.graph()
+    evolution(start_pop_size, num_gens, tsp_map, mutation_rate)
+    
+
+if __name__ == "__main__":
+    main()
+
+
 
