@@ -293,7 +293,7 @@ def evolution(pop_size, num_gens, tsp_map, mutation_rate):
 
     graph_evolution(range(num_gens+1), best_per_gen)
 
-    print "that's all folks!"
+    print "omg that's all folks!"
 
 def rand_map(num_cities):
     ''' generates a random map with a number of cities and a size in px '''
