@@ -36,6 +36,9 @@ class Building:
         self.triangles = triangulate(self.poly)
         self.convexes = convexise(self.triangles)
 
+    def get_poly(self):
+        return self.poly
+
     def get_triangles(self):
         return self.triangles
 
@@ -46,12 +49,28 @@ class Building:
         # return the fitness of this particular building
         return 0
 
+    def graph(self):
+        # not tested!
+
+        ''' use google charts to see what this building looks like '''
+        chart = XYLineChart(200, 200, x_range=(0, 200), y_range=(0, 200))
+
+        xdata = []
+        ydata = []
+
+        for n in verticies:
+            x,y = n
+            xdata.append(x*10)
+            ydata.append(y*10)
+        chart.add_data(xdata)
+        chart.add_data(ydata)
+        webbrowser.open(chart.get_url())
+
 
 class Population:
     def __init__(self, size):
         self.size = size
         self.buildings = []
-
 
     def get_buildings(self):
         return self.buildings
@@ -60,6 +79,7 @@ class Population:
         return self.size
 
     def fill(self):
+        return 0
 
 
     def fittest(self):
@@ -82,7 +102,7 @@ def random_building():
 def generate_verticies(num_vertices):
     vert = []
     for n in range(num_vertices):
-        vert.append((random.randint(0,15), random.randint(0,15))) # tuple represents a point
+        vert.append((random.randint(20,200), random.randint(20,200))) # tuple represents a point
     return vert
 
 
@@ -91,7 +111,6 @@ def valid_building(v):
         cross each other). our definition of a valid building is a simple polygon '''
     building = LinearRing(v) # shapely
     return building.is_simple # shapely
-
 
 
 

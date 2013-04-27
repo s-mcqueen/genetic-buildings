@@ -1,115 +1,74 @@
-# mostly just trash in this file -- some of it might 
+import building_evolution # our evolution interface
 
+# game interface
 import pygame
 from pygame.locals import *
 
-import Box2D
-from Box2D.b2 import *
-import random
+# physics
+import pymunk
+from pymunk.vec2d import Vec2d
+from pymunk.util import *
+from pymunk.pygame_util import draw_space, from_pygame
 
-from pygooglechart import XYLineChart
-import webbrowser
+import random # you never know
 
-PPM=20.0 # pixels per meter
+# variable declarations
 FPS=60
-T_STEP=1.0/FPS  # time step
+TIME_STEP=1.0/FPS  # time step
 SCREEN_WIDTH, SCREEN_HEIGHT=800, 800
 
-# pybox2d set up
-w = world(gravity=(0,0), doSleep=True)
+# pygame set up
+pygame.init()
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption('genetic buildings')
+clock = pygame.time.Clock()
+
+# pymunk set up
+space = pymunk.Space()   
+space.gravity = 0,-1000  # this seems high?
+
+def place_building(building, coords):
+
+    vects = building.get_convexes()  # its not this, but its not poly.. 
+
+    for v in vects:
+
+        b_body = pymunk.Body(pymunk.inf, pymunk.inf)
+        b_body.position = coords
+        b_shape = pymunk.Poly(b_body, v)
+        b_shape.elasticity = 1.0
+        b_shape.color = pygame.color.THECOLORS['blue']
+
+        space.add(b_body, b_shape)
 
 
-def rand_building(world):
-    angle = random.randint(0,360)
-    angle = 0
-    position = (20,20)
-    num_vertices = random.randint(3, 7)
-    v = []
-    for n in range(num_vertices):
-        v.append((random.randint(0,15), random.randint(0,15)))
-
-    print num_vertices
-    print v
-    dynamic_body = world.CreateDynamicBody(position=position, angle=angle)
-    building=dynamic_body.CreatePolygonFixture(
-                        vertices=v,
-                        density=2, 
-                        friction=2
-                        )
-
-    # graph the building -- testing concavity
-
-    chart = XYLineChart(200, 200, 
-                        x_range=(0, 200), y_range=(0, 200))
-
-
-    xdata = []
-    ydata = []
-
-    for n in v:
-        x,y = n
-        xdata.append(x*10)
-        ydata.append(y*10)
-    chart.add_data(xdata)
-    chart.add_data(ydata)
-    webbrowser.open(chart.get_url())
-
-def rand_ground_building(world):
-    # make sure 2 vertices are on the ground
-    return 0
-
-
-
-def new_game(world):
-
-    COLORS = {
-        staticBody  : (23,44,131,254),
-        dynamicBody : (40,40,40,255),
-    }
-
-    # Pygame setup
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    clock = pygame.time.Clock()
-
-    #create the ground
-    ground_body = world.CreateStaticBody(
-        position = (0,1),
-        shapes = polygonShape(box=(50,5)),
-        )
-
-    ## random building
-    rand_building(world)
-    ## 
-
-
+def main():
     running = True
     while running:
-        # check for quit conditions
         for event in pygame.event.get():
-            if event.type == QUIT or (event.type==KEYDOWN and event.key==K_ESCAPE):
+            if event.type == QUIT: 
                 running = False
+            elif event.type == KEYDOWN and (event.key in [K_ESCAPE, K_q]):
+                running = False
+            elif event.type == MOUSEBUTTONDOWN:
+                new_building = building_evolution.random_building()
+                place_building(new_building, event.pos)
 
-        screen.fill((0,0,0,0))
-        for body in world.bodies:
-            for fixture in body.fixtures:
-                shape = fixture.shape
-                vertices=[(body.transform*v)*PPM for v in shape.vertices]
 
-                # flip
-                vertices=[(v[0], SCREEN_HEIGHT-v[1]) for v in vertices]
-                pygame.draw.polygon(screen, COLORS[body.type], vertices)
+        # make our screen white
+        screen.fill(pygame.color.THECOLORS["white"])
+        
+        # draw the space
+        pymunk.pygame_util.draw_space(screen, space)
 
-        # velocity iterations, position iterations
-        world.Step(T_STEP, 10, 10)
+        # update physics
+        space.step(TIME_STEP)
+
         pygame.display.flip()
         clock.tick(FPS)
 
     pygame.quit()
     print "done"
 
-
-
-new_game(w)
-
-
-
+if __name__ == '__main__':
+    main()
