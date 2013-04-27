@@ -10,15 +10,18 @@ from pymunk.util import *
 import random
 
 class Building:
-    ''' a building has a list of verticies that define it as well as
+    """ a building has a list of verticies that define it as well as
         other features.
             * a density? weight?
             * cost? (space taken up on the ground)
             * height?
-    '''
+    """
     def __init__(self, verticies):
         self.verticies = verticies  # a list of verticies defining this building
+
+        self.center = calc_center(verticies) # center of points
         self.poly = [Vec2d(v) for v in verticies]
+
         self.triangles = triangulate(self.poly)
         self.convexes = convexise(self.triangles)
 
@@ -58,10 +61,10 @@ class Building:
         xdata = []
         ydata = []
 
-        for n in verticies:
+        for n in self.verticies:
             x,y = n
-            xdata.append(x*10)
-            ydata.append(y*10)
+            xdata.append(x)
+            ydata.append(y)
         chart.add_data(xdata)
         chart.add_data(ydata)
         webbrowser.open(chart.get_url())
@@ -107,8 +110,8 @@ def generate_verticies(num_vertices):
 
 
 def valid_building(v):
-    ''' returns true if a polygon is simple (meaning none of its edges
-        cross each other). our definition of a valid building is a simple polygon '''
+    """ returns true if a polygon is simple (meaning none of its edges
+        cross each other). our definition of a valid building is a simple polygon """
     building = LinearRing(v) # shapely
     return building.is_simple # shapely
 
@@ -130,5 +133,5 @@ def valid_building(v):
 
 # MUTATION 
 
-b = random_building()
-print b.get_convexes()
+# b = random_building()
+# b.graph()

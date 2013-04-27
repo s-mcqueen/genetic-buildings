@@ -25,21 +25,30 @@ clock = pygame.time.Clock()
 
 # pymunk set up
 space = pymunk.Space()   
-space.gravity = 0,-1000  # this seems high?
+space.gravity = 0,0  # this seems high?
+
+def flipy((x,y)):   
+    """ hack to convert chipmunk physics to pygame coordinates"""
+    return (x, -y+SCREEN_HEIGHT)
 
 def place_building(building, coords):
 
-    vects = building.get_convexes()  # its not this, but its not poly.. 
+    vects = building.get_convexes() 
+
+    b_body = pymunk.Body(pymunk.inf, pymunk.inf)
+    b_body.position = coords
+
+    space.add(b_body)
 
     for v in vects:
 
-        b_body = pymunk.Body(pymunk.inf, pymunk.inf)
-        b_body.position = coords
-        b_shape = pymunk.Poly(b_body, v)
-        b_shape.elasticity = 1.0
-        b_shape.color = pygame.color.THECOLORS['blue']
+        b_shape = pymunk.Poly(b_body, v, (0,0), True)
 
-        space.add(b_body, b_shape)
+        b_shape.elasticity = 1.0
+        b_shape.group = 1
+        b_shape.color = pygame.color.THECOLORS['black']
+
+        space.add(b_shape)
 
 
 def main():
@@ -52,7 +61,9 @@ def main():
                 running = False
             elif event.type == MOUSEBUTTONDOWN:
                 new_building = building_evolution.random_building()
-                place_building(new_building, event.pos)
+                place_building(new_building, flipy(event.pos))
+                
+                new_building.graph() # see what it looks like
 
 
         # make our screen white
