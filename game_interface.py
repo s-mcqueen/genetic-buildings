@@ -25,7 +25,7 @@ clock = pygame.time.Clock()
 
 # pymunk set up
 space = pymunk.Space()   
-space.gravity = 0,0  # this seems high?
+space.gravity = 0,-20  # this seems high?
 
 def flipy((x,y)):   
     """ hack to convert chipmunk physics to pygame coordinates"""
@@ -45,7 +45,7 @@ def place_building(building, coords):
         b_shape = pymunk.Poly(b_body, v, (0,0), True)
 
         b_shape.elasticity = 1.0
-        b_shape.group = 1
+        # b_shape.group = 1
         b_shape.color = pygame.color.THECOLORS['black']
 
         space.add(b_shape)
@@ -63,7 +63,7 @@ def main():
                 new_building = building_evolution.random_building()
                 place_building(new_building, flipy(event.pos))
                 
-                new_building.graph() # see what it looks like
+                # new_building.graph() # see what it looks like
 
 
         # make our screen white

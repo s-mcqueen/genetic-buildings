@@ -19,11 +19,9 @@ class Building:
     def __init__(self, verticies):
         self.verticies = verticies  # a list of verticies defining this building
 
-        self.center = calc_center(verticies) # center of points
-        self.poly = [Vec2d(v) for v in verticies]
-
+        self.poly = [Vec2d(v) for v in verticies] # a polygon reprsentation of the building
         self.triangles = triangulate(self.poly)
-        self.convexes = convexise(self.triangles)
+        self.convexes = convexise(self.triangles) # convexes representing the building shape
 
         self.weight = 0  # a random value? 
         self.cost = 0  # some function of space taken on ground
@@ -49,13 +47,13 @@ class Building:
         return self.convexes
 
     def fitness(self):
-        # return the fitness of this particular building
+        """ return the fitness of this particular building
+        """
         return 0
 
     def graph(self):
-        # not tested!
-
-        ''' use google charts to see what this building looks like '''
+        """ graph the building as a polygon using google charts
+        """
         chart = XYLineChart(200, 200, x_range=(0, 200), y_range=(0, 200))
 
         xdata = []
@@ -71,9 +69,16 @@ class Building:
 
 
 class Population:
-    def __init__(self, size):
+    def __init__(self, size, fill):
         self.size = size
         self.buildings = []
+        if fill:
+            self.generate()
+
+    def generate(self):
+        for n in range(self.size):
+            # construct a random building and add it to the population
+            self.buildings.append(random_building())
 
     def get_buildings(self):
         return self.buildings
@@ -84,23 +89,10 @@ class Population:
     def fill(self):
         return 0
 
-
     def fittest(self):
         # calculate the best building
         return 0
 
-# RANDOM BUILDING GENERATION
-
-
-def random_building():
-    num_vertices = random.randint(3, 10) # at least 3, or else is a line
-    vert = generate_verticies(num_vertices)
-    while not valid_building(vert):
-        vert = generate_verticies(num_vertices)
-
-    # we know we have a valid set of verticies
-    b = Building(vert)
-    return b
 
 def generate_verticies(num_vertices):
     vert = []
@@ -108,18 +100,27 @@ def generate_verticies(num_vertices):
         vert.append((random.randint(20,200), random.randint(20,200))) # tuple represents a point
     return vert
 
+def valid_poly(v):
+    """ returns true if a set of vertices contructs a simple and counter-clockwise polygon
+        
+        simple = no edges cross each other
+        counter-clockwise = in practice this seems important!
 
-def valid_building(v):
-    """ returns true if a polygon is simple (meaning none of its edges
-        cross each other). our definition of a valid building is a simple polygon """
-    building = LinearRing(v) # shapely
-    return building.is_simple # shapely
+        a valid building must meet both of these criteria
+    """
+    poly = LinearRing(v)
+    return (poly.is_simple and poly.is_ccw)
 
+def random_building():
+    num_vertices = random.randint(3, 10) # at least 3, or else is a line
+    vert = generate_verticies(num_vertices)
+    while not valid_poly(vert):
+        # verticies need to construct counter clockwise, simple polygons
+        vert = generate_verticies(num_vertices)
 
-
-    # make it into a polygon
-    # triangulate / convexise polygon (pymunk.utils)
-        # put these polygons together -- this is our building
+    # we know we have a valid set of verticies
+    b = Building(vert)
+    return b
 
 
 # POPULATION GENERATION
@@ -133,5 +134,8 @@ def valid_building(v):
 
 # MUTATION 
 
-# b = random_building()
-# b.graph()
+
+# p = Population(10, True)
+# buildings = p.get_buildings()
+# for b in buildings:
+#     b.graph()
