@@ -93,7 +93,6 @@ class Population:
         # calculate the best building
         return 0
 
-
 def generate_verticies(num_vertices):
     vert = []
     for n in range(num_vertices):
@@ -123,16 +122,19 @@ def random_building():
     return b
 
 
-# POPULATION GENERATION
+# fitness:
+# how big the symmetric difference is between a given shape, and a target shape
+# shapely built in function: object.symmetric_difference(other)
 
-# for size_of_population:
-    # RANDOM BUIDLING GENERATION
+# most fit:
+# lowest symmetric difference to the target shape
 
-# FITNESS
+# crossover -- should have many children
+# some section of verticies from parent1
+# some other section of verticies from parent2
 
-# CROSSOVER
-
-# MUTATION 
+# mutation
+# randomly add or take away a new vertex / slightly alter a current vertex 
 
 
 # p = Population(10, True)

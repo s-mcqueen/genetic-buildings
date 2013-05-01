@@ -1,4 +1,5 @@
-import building_evolution # our evolution interface
+# import building_evolution # our evolution interface
+import target_poly_evolution 
 
 # game interface
 import pygame
@@ -31,9 +32,9 @@ def flipy((x,y)):
     """ hack to convert chipmunk physics to pygame coordinates"""
     return (x, -y+SCREEN_HEIGHT)
 
-def place_building(building, coords):
+def place_polygon(polygon, coords):
 
-    vects = building.get_convexes() 
+    vects = polygon.get_convexes() 
 
     b_body = pymunk.Body(pymunk.inf, pymunk.inf)
     b_body.position = coords
@@ -60,8 +61,8 @@ def main():
             elif event.type == KEYDOWN and (event.key in [K_ESCAPE, K_q]):
                 running = False
             elif event.type == MOUSEBUTTONDOWN:
-                new_building = building_evolution.random_building()
-                place_building(new_building, flipy(event.pos))
+                new_polygon = target_poly_evolution.random_polygon(None)
+                place_polygon(new_polygon, flipy(event.pos))
                 
                 # new_building.graph() # see what it looks like
 

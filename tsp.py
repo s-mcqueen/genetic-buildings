@@ -90,7 +90,7 @@ class tour:
             i+=1
 
     def fitness(self):
-        ''' returns fitness of this tour -- want to MINIMIZE this '''
+        """ returns fitness of this tour -- want to MINIMIZE this """
 
         to = copy.deepcopy(self.tour_order)
         
@@ -235,7 +235,7 @@ def mutate(pop, mutation_rate):
 def evolve(pop, tsp_map, mutation_rate):
 
     # to keep population from growing too fast
-    new_pop_size = (pop.get_size() // random.randint(1,5))
+    new_pop_size = (pop.get_size() // random.randint(1,2))
     if (new_pop_size < 10):
         new_pop_size += 10
     new_pop = population(new_pop_size, False, tsp_map)
@@ -247,7 +247,7 @@ def evolve(pop, tsp_map, mutation_rate):
         parent2 = run_tournament(pop, tournament_size)
 
         # parents have up to 5 children, randomly
-        for s in range(random.randint(1, 5)):
+        for s in range(random.randint(1, 2)):
             tour = crossover(parent1, parent2)
             new_pop.add_tour(tour)
 
