@@ -15,7 +15,7 @@ class Polypoly:
 
         # generate some random verticies
         if verticies == []:
-            for n in range(5):  # random.randint(3, 10)
+            for n in range(4):  # random.randint(3, 10)
                 v = (random.uniform(0,200), random.uniform(0,200))
                 self.verticies.append(v)
 
@@ -132,13 +132,12 @@ def mutation(pop, mutation_rate):
 
 def evolve(pop, mutation_rate):
 
-    print "evolving..."
     new_pop_size = (pop.get_size() // 2)
     if (new_pop_size < 10):
         new_pop_size += 10
     new_pop = Population(new_pop_size, None, False)
 
-    tournament_size = 8
+    tournament_size = 10
 
     for n in range(new_pop_size):
         parent1 = run_tournament(pop, tournament_size)
@@ -148,17 +147,27 @@ def evolve(pop, mutation_rate):
         c1 = parent1.crossover(parent2)
         c2 = parent2.crossover(parent1)
 
-        # print ((parent1.fitness() > c1.fitness()),
-        #         (parent1.fitness() > c2.fitness()),
-        #        (parent2.fitness() > c1.fitness()),
-        #         (parent2.fitness() > c2.fitness()))
+        # print ((parent1.fitness() < c1.fitness()),
+        #         (parent1.fitness() < c2.fitness()),
+        #        (parent2.fitness() < c1.fitness()),
+        #         (parent2.fitness() < c2.fitness()))
 
         new_pop.add_polygon(c1)
         new_pop.add_polygon(c2)
 
     mutation(new_pop, mutation_rate)
-
+    (a,b) =  new_pop.fittest()
+    print "fit : " + str(b)
     return new_pop
+
+
+# def evolution(pop_size, target, mutation_rate):
+#     i = 0
+
+#     # gen 0
+#     p = Population
+
+
 
 
 

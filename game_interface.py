@@ -15,7 +15,7 @@ from pymunk.pygame_util import draw_space, from_pygame
 # variable declarations
 FPS=60
 TIME_STEP=1.0/FPS  # time step
-SCREEN_WIDTH, SCREEN_HEIGHT=1000, 800
+SCREEN_WIDTH, SCREEN_HEIGHT=1400, 800
 
 # pygame set up
 pygame.init()
@@ -64,7 +64,7 @@ def main():
                 tar = target_poly_evolution.Polypoly(None, [])
                 p = target_poly_evolution.Population(100, tar)
 
-                for i in range(15):
+                for i in range(40):
                     p = target_poly_evolution.evolve(p, 40)
 
                 (a,b) = p.fittest()
