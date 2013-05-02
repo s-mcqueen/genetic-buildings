@@ -1,78 +1,83 @@
-import shapely
-from shapely.geometry.polygon import LinearRing
-from shapely.geometry.polygon import Polygon
-
-from pygooglechart import XYLineChart
-import webbrowser
+from __future__ import division
 
 from pymunk.vec2d import Vec2d
 from pymunk.util import *
 
+from shapely.geometry.polygon import Polygon
 import random
 
 
-global i
-
 class Polypoly:
-    """ a polygon has a list of verticies that define it 
-    """
-    def __init__(self, verticies, target):
-        
-        self.verticies = verticies  # a list of verticies defining this polygon
-        self.target = target # target does not exist at first
 
-        self.poly = [Vec2d(v) for v in verticies] # a pymunk polygon reprsentation
-        self.triangles = triangulate(self.poly)
+    def __init__(self, target, verticies):
+        self.target = target        
+        self.verticies = verticies
+
+        # generate some random verticies
+        if verticies == []:
+            for n in range(5):  # random.randint(3, 10)
+                v = (random.uniform(0,200), random.uniform(0,200))
+                self.verticies.append(v)
+
+        self.vectors = [Vec2d(v) for v in self.verticies]
+        self.triangles = triangulate(self.vectors)
         self.convexes = convexise(self.triangles) # convexes representing the shape
 
+    def get_target(self):
+        return self.target
+
+    def set_target(self, target):
+        self.target = target
+
     def get_verticies(self):
-        return self.verticies
+        return self.verticies        
 
-    def set_verticies(self, new_verticies):
-        self.verticies = new_verticies
-        # need to reset related aspects of the polygon
-        self.poly = [Vec2d(v) for v in verticies]
-        self.triangles = triangulate(self.poly)
-        self.convexes = convexise(self.triangles)
-
-    def get_poly(self):
-        return self.poly
-
-    def get_triangles(self):
-        return self.triangles
+    def get_vectors(self):
+        return self.vectors
 
     def get_convexes(self):
         return self.convexes
 
     def fitness(self):
-        """ return the fitness of this particular polygon
-             - - want to minimize this value - -
-        """
-        a = Polygon(self.verticies)
-        b = Polygon(self.target.get_verticies())
+        vect = self.vectors
+        t_vect = self.target.get_vectors()
 
-        difference = a.symmetric_difference(b)
-        return difference.area
+        diff = 0
+        for v in range(len(vect)):
+            diff += vect[v].get_dist_sqrd(t_vect[v]) 
 
-    def graph(self):
-        """ graph the polygon using google charts
-        """
-        chart = XYLineChart(200, 200, x_range=(0, 200), y_range=(0, 200))
+        return diff # minimize
 
-        xdata = []
-        ydata = []
+    def crossover(self, other):
+        parent1 = self.verticies
+        parent2 = other.get_verticies()
+   
+        start_i = 1
+        end_i = 0
+        while (start_i >= end_i) and (len(parent1) > end_i): 
+            # while loop ensures no "backwards" sections
+            v1 = random.choice(parent2)
+            v2 = random.choice(parent2)
+            start_i = parent2.index(v1)
+            end_i = parent2.index(v2)
 
-        for n in self.verticies:
-            x,y = n
-            xdata.append(x)
-            ydata.append(y)
-        chart.add_data(xdata)
-        chart.add_data(ydata)
-        webbrowser.open(chart.get_url())
+        parent1[start_i:end_i] = parent2[start_i:end_i]
+        return Polypoly(self.target, parent1)
+
+    def this_mutate(self):
+        """ angle mutate """
+        v = random.choice(self.vectors) # random vector
+        v_index = self.vectors.index(v) # remember where it came from
+        v.angle *= random.uniform(0, 10) # change angle randomly
+        self.vectors[v_index] = v  # replace
+        self.triangles = triangulate(self.vectors)
+        self.convexes = convexise(self.triangles) # convexes representing the shape
+
+        self.verticies = [(v.x, v.y) for v in self.vectors]
 
 
 class Population:
-    def __init__(self, size, fill, target):
+    def __init__(self, size, target, fill = True):
         self.size = size
         self.polygons = []
         self.target = target
@@ -82,16 +87,20 @@ class Population:
     def generate(self):
         for n in range(self.size):
             # construct a random polygon and add it to the population
-            self.polygons.append(random_polygon(self.target))
+            self.polygons.append(Polypoly(self.target, []))
 
     def get_polygons(self):
         return self.polygons
 
+    def add_polygon(self, poly):
+        self.polygons.append(poly)
+        self.size = len(self.polygons)
+
     def get_size(self):
         return self.size
 
-    def fill(self):
-        return 0
+    def get_target(self):
+        return self.target
 
     def fittest(self):
         best = float('inf')
@@ -103,117 +112,53 @@ class Population:
                 best_so_far = p
         return (best_so_far, best)
 
-def generate_verticies(num_vertices):
-    global i
-    i += 1
-    vert = []
-    for n in range(num_vertices):
-        vert.append((random.randint(20,200), random.randint(20,200))) # tuple represents a point
-    return vert
 
-def valid_poly(v):
-    """ returns true if a set of vertices contructs a simple and counter-clockwise polygon
+def run_tournament(pop, size):
+    tournament = Population(size, pop.get_target(), False)
+
+    for n in range(size):
+        poly = random.choice(pop.get_polygons())
+        tournament.add_polygon(poly)
+
+    fit, fitness = tournament.fittest()
+    return fit
+
+def mutation(pop, mutation_rate):
+    pop_size = pop.get_size()
+
+    for p in pop.get_polygons():
+        if (random.randint(1,100) < mutation_rate):
+            p.this_mutate()
+
+def evolve(pop, mutation_rate):
+
+    print "evolving..."
+    new_pop_size = (pop.get_size() // 2)
+    if (new_pop_size < 10):
+        new_pop_size += 10
+    new_pop = Population(new_pop_size, None, False)
+
+    tournament_size = 8
+
+    for n in range(new_pop_size):
+        parent1 = run_tournament(pop, tournament_size)
+        parent2 = run_tournament(pop, tournament_size)
+
         
-        simple = no edges cross each other
-        counter-clockwise = in practice this seems important!
-    """
-    poly = LinearRing(v)
-    return (poly.is_simple and poly.is_ccw)
+        c1 = parent1.crossover(parent2)
+        c2 = parent2.crossover(parent1)
 
-def random_polygon(target):
-    num_vertices = random.randint(3, 10) # at least 3, or else is a line
-    vert = generate_verticies(num_vertices)
-    while not valid_poly(vert):
-        # verticies need to construct counter clockwise, simple polygons
-        vert = generate_verticies(num_vertices)
+        # print ((parent1.fitness() > c1.fitness()),
+        #         (parent1.fitness() > c2.fitness()),
+        #        (parent2.fitness() > c1.fitness()),
+        #         (parent2.fitness() > c2.fitness()))
 
-    # we know we have a valid set of verticies
-    b = Polypoly(vert, target)
-    return b
+        new_pop.add_polygon(c1)
+        new_pop.add_polygon(c2)
 
+    mutation(new_pop, mutation_rate)
 
-def run_tournament():
-    return 0
-
-
-def valid_crossover(parent1, parent2):
-    vert = crossover(parent1, parent2)
-    while not valid_poly(vert):
-        vert = crossover(parent1, parent2)
-
-    # return the child
-    return Polypoly(vert)
-
-
-def vertex_not_in_list(v, lst):
-    for l in lst:
-        if (v == l):
-            return False
-    return True
-
-def crossover(parent1, parent2):
-    # parents are polypolys
-
-    child_verts = []
-
-    # choose one parent to select an initial path from
-    if (random.randint(1,2) == 1):
-        chosen = parent1.get_verticies()
-        other = parent2.get_verticies()
-    else:
-        chosen = parent2.get_verticies()
-        other = parent1.get_verticies()
-
-    # get a random section of verticies from parent1    
-    start_i = 1
-    end_i = 0
-    while (start_i >= end_i): 
-        # while loop ensures no "backwards" sections
-        v1 = random.choice(chosen)
-        v2 = random.choice(chosen)
-        start_i = chosen.index(v1)
-        end_i = chosen.index(v2)
-
-    # add these verticies
-    child_verts = chosen[start_i:end_i]
-
-
-    return child_verts
+    return new_pop
 
 
 
-# fitness:
-# how big the symmetric difference is between a given shape, and a target shape
-# shapely built in function: object.symmetric_difference(other)
-
-# most fit:
-# lowest symmetric difference to the target shape
-
-# crossover -- should have many children
-# some section of verticies from parent1
-# some other section of verticies from parent2
-
-# mutation
-# randomly add or take away a new vertex / slightly alter a current vertex 
-
-
-def set_i_to_zero():
-    global i 
-    i = 0
-    return
-
-
-
-# # tester code 
-set_i_to_zero()
-
-
-# tar = random_polygon(None)
-# tar.graph()
-
-# p = Population(40, True, tar)
-# print "made pop"
-# (best, value) = p.fittest()
-# best.graph()
-# print value
-# print "i" + str(i)
