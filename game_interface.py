@@ -64,18 +64,13 @@ def main():
                 tar = target_poly_evolution.Polypoly(None, [])
                 p = target_poly_evolution.Population(100, tar)
 
-                for i in range(40):
-                    p = target_poly_evolution.evolve(p, 40)
+                for i in range(40):  # number of generations
+                    p = target_poly_evolution.evolve(p, 20)
 
                 (a,b) = p.fittest()
 
                 place_polygon(tar, flipy(event.pos), 'black')
                 place_polygon(a, flipy(event.pos), 'red')
-
-
-
-                
-
 
         # make our screen white
         screen.fill(pygame.color.THECOLORS["white"])

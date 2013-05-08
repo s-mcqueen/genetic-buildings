@@ -132,7 +132,7 @@ def mutation(pop, mutation_rate):
 
 def evolve(pop, mutation_rate):
 
-    new_pop_size = (pop.get_size() // 2)
+    new_pop_size = (pop.get_size() // 4)
     if (new_pop_size < 10):
         new_pop_size += 10
     new_pop = Population(new_pop_size, None, False)
@@ -147,27 +147,15 @@ def evolve(pop, mutation_rate):
         c1 = parent1.crossover(parent2)
         c2 = parent2.crossover(parent1)
 
-        # print ((parent1.fitness() < c1.fitness()),
-        #         (parent1.fitness() < c2.fitness()),
-        #        (parent2.fitness() < c1.fitness()),
-        #         (parent2.fitness() < c2.fitness()))
-
         new_pop.add_polygon(c1)
         new_pop.add_polygon(c2)
+        new_pop.add_polygon(parent1) # elitism
+        new_pop.add_polygon(parent2) # elitism
 
     mutation(new_pop, mutation_rate)
     (a,b) =  new_pop.fittest()
     print "fit : " + str(b)
     return new_pop
-
-
-# def evolution(pop_size, target, mutation_rate):
-#     i = 0
-
-#     # gen 0
-#     p = Population
-
-
 
 
 
